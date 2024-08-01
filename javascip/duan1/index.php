@@ -75,12 +75,13 @@ if ((isset($_GET['act'])) && ($_GET['act'] != "")) {
                 $id = $_POST['id'];
                 update_taikhoan($id, $user, $pass, $email, $address, $tel);
 
+                $_SESSION['thongbao'] = "Chúc mừng bạn đã cập nhật thành công!";
                 $_SESSION['user'] = checkuser($user, $pass);
-                $thongbao = "Chúc mừng bạn đã cập nhật thành công !";
-                header('location: index.php?act=edit_taikhoan');
+
+                header('Location: index.php?act=edit_taikhoan');
+                exit();
             }
             include "view/taikhoan/edit_taikhoan.php";
-
             break;
         case 'quenmk':
             if (isset($_POST['guiemail']) && ($_POST['guiemail'])) {
@@ -125,12 +126,21 @@ if ((isset($_GET['act'])) && ($_GET['act'] != "")) {
         case 'bill':
             include "view/cart/bill.php";
             break;
-        case 'billcomfirm':
 
+        case 'billcomfirm':
             if (isset($_POST['dongydathang']) && ($_POST['dongydathang'])) {
+                // Kiểm tra nếu giỏ hàng trống thì không cho phép đặt hàng
+                if (empty($_SESSION['mycart'])) {
+                    $thongbao = '<h3 style="color: red;">Giỏ hàng của Quý Khách đang trống</h3>';
+                    include "view/cart/viewcart.php";
+                    break;
+                }
+                
                 if (isset($_SESSION['user'])) {
                     $iduser = $_SESSION['user']['id'];
-                } else $id = 0;
+                } else {
+                    $id = 0;
+                }
                 $name = $_POST['name'];
                 $email = $_POST['email'];
                 $address = $_POST['address'];
@@ -140,22 +150,21 @@ if ((isset($_GET['act'])) && ($_GET['act'] != "")) {
                 $ngaydathang = date('Y-m-d H:i:s'); // Lấy thời gian thực
                 $tongdonhang = tongdonhang();
 
-
                 // Tạo bill
                 $idbill = insert_bill($iduser, $name, $email, $address, $tel, $pttt, $ngaydathang, $tongdonhang);
 
                 // Insert into cart: $session['mycart'] $idbill
-
                 foreach ($_SESSION['mycart'] as $cart) {
                     insert_cart($_SESSION['user']['id'], $cart[0], $cart[2], $cart[1], $cart[3], $cart[4], $cart[5], $idbill);
                 }
                 // Xóa session cart
-                $_SESSION['cart'] = [];
+                $_SESSION['mycart'] = [];
             }
             $bill = loadone_bill($idbill);
             $billct = loadall_cart($idbill);
             include "view/cart/billcomfirm.php";
             break;
+
         case 'mybill':
             $mybill = loadall_bill("", $_SESSION['user']['id']);
             include "view/cart/mybill.php";
@@ -192,6 +201,14 @@ if ((isset($_GET['act'])) && ($_GET['act'] != "")) {
             } else {
                 include "view/home.php";
             }
+            break;
+
+
+        case 'update_status':
+            header('location: index.php?act=update_status');
+
+
+            include "admin/bill/update_status.php";
             break;
 
         default:
